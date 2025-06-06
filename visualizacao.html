@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Visualização OBS</title>
+
+  <!-- Fonte Averta via CDN -->
+  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -13,25 +22,28 @@
       justify-content: center;
       height: 100vh;
       color: white;
+      font-family: 'Averta', sans-serif;
     }
+
     #pontuacao {
       font-size: 120px;
       margin-bottom: 20px;
     }
+
     img {
       max-height: 80vh;
+      max-width: 100%;
     }
   </style>
-  <script src="firebase-config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
   <div id="pontuacao">--</div>
   <img id="foto" src="" alt="Foto do jogador">
+
   <script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     const urlParams = new URLSearchParams(window.location.search);
     const nome = urlParams.get("jogador");
     const pontuacaoEl = document.getElementById("pontuacao");
@@ -40,10 +52,13 @@
     db.ref("jogadores/" + nome).on("value", snapshot => {
       const j = snapshot.val();
       if (!j) return;
+
       pontuacaoEl.innerText = j.pontuacao;
+
       let estado = "url_neutro";
       if (j.pontuacao <= 50) estado = "url_triste";
       else if (j.pontuacao > 70) estado = "url_feliz";
+
       fotoEl.src = j[estado];
     });
   </script>
