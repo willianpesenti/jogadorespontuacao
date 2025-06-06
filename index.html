@@ -2,164 +2,102 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Painel de Jogadores com Crop</title>
-
-  <!-- Fonte Averta + CropperJS -->
-  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
-  <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet" />
-
+  <title>Painel de Jogadores</title>
+  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet" />
   <style>
     body {
       font-family: 'Averta', sans-serif;
-      background-color: #f5f5f5;
       margin: 0;
       padding: 20px;
+      background-color: #f2f2f2;
     }
-
     h1 {
       text-align: center;
-      margin-bottom: 30px;
     }
-
-    .jogador {
+    .container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .time {
+      width: 48%;
       background: white;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-    }
-
-    img.thumb {
-      width: 100px;
-      height: auto;
-      margin-right: 10px;
-    }
-
-    button {
-      margin: 4px;
-    }
-
-    #cropperModal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    #cropperModal img {
-      max-height: 80vh;
-    }
-
-    #cropperContainer {
-      background: white;
-      padding: 20px;
       border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .jogador {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    img {
+      height: 80px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .obs-link {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.9em;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <h1>Painel de Jogadores</h1>
-  <div id="painelJogadores"></div>
-
-  <!-- Modal de Crop -->
-  <div id="cropperModal">
-    <div id="cropperContainer">
-      <img id="cropImage" src="" />
-      <div style="text-align:center; margin-top:10px;">
-        <button onclick="saveCrop()">Salvar</button>
-        <button onclick="closeCrop()">Cancelar</button>
-      </div>
+  <h1>Painel de Visualização</h1>
+  <div class="container">
+    <div class="time" id="timeA">
+      <h2>Time A</h2>
+    </div>
+    <div class="time" id="timeB">
+      <h2>Time B</h2>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://unpkg.com/cropperjs"></script>
   <script src="firebase-config.js"></script>
-
   <script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const painel = document.getElementById('painelJogadores');
-    const modal = document.getElementById('cropperModal');
-    const imageToCrop = document.getElementById('cropImage');
-    let cropper = null;
-    let jogadorRefAtual = null;
-    let tipoImagemAtual = "";
-    let jogadorIdAtual = "";
-
-    function carregarJogadores() {
+    function atualizar() {
       db.ref("jogadores").on("value", snapshot => {
-        painel.innerHTML = '';
+        const timeA = document.getElementById("timeA");
+        const timeB = document.getElementById("timeB");
+
+        // limpar
+        timeA.innerHTML = "<h2>Time A</h2>";
+        timeB.innerHTML = "<h2>Time B</h2>";
+
         const jogadores = snapshot.val();
         if (!jogadores) return;
 
-        for (const id in jogadores) {
-          const j = jogadores[id];
-          const div = document.createElement('div');
-          div.className = 'jogador';
-
+        Object.entries(jogadores).forEach(([id, j]) => {
+          const div = document.createElement("div");
+          div.className = "jogador";
           div.innerHTML = `
-            <h3>${j.nome} (${j.time})</h3>
-            <p>Pontuação: ${j.pontuacao || 0}</p>
-
-            ${j.url_triste ? `<img src="${j.url_triste}" id="img_${id}_triste" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_triste', '${j.url_triste}')">Editar Triste</button><br>` : ''}
-
-            ${j.url_neutro ? `<img src="${j.url_neutro}" id="img_${id}_neutro" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_neutro', '${j.url_neutro}')">Editar Neutro</button><br>` : ''}
-
-            ${j.url_feliz ? `<img src="${j.url_feliz}" id="img_${id}_feliz" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_feliz', '${j.url_feliz}')">Editar Feliz</button>` : ''}
+            <div class="label">${j.nome} - Pontos: ${j.pontuacao || 0}</div>
+            <img src="${j.url_triste || ''}" />
+            <img src="${j.url_neutro || ''}" />
+            <img src="${j.url_feliz || ''}" />
+            <a class="obs-link" href="visualizacao.html?id=${id}" target="_blank">Abrir no OBS</a>
           `;
-          painel.appendChild(div);
-        }
+
+          if (j.time === "A") {
+            timeA.appendChild(div);
+          } else {
+            timeB.appendChild(div);
+          }
+        });
       });
     }
 
-    function editarImagem(id, campo, url) {
-      jogadorRefAtual = db.ref("jogadores/" + id);
-      jogadorIdAtual = id;
-      tipoImagemAtual = campo;
-      imageToCrop.src = url;
-      modal.style.display = 'flex';
-
-      imageToCrop.onload = () => {
-        if (cropper) cropper.destroy();
-        cropper = new Cropper(imageToCrop, {
-          aspectRatio: 1080 / 1920,
-          viewMode: 1
-        });
-      };
-    }
-
-    function saveCrop() {
-      if (cropper) {
-        const canvas = cropper.getCroppedCanvas({ width: 1080, height: 1920 });
-        const base64 = canvas.toDataURL("image/jpeg");
-        jogadorRefAtual.update({ [tipoImagemAtual]: base64 });
-
-        const campo = tipoImagemAtual.replace("url_", "");
-        document.getElementById(`img_${jogadorIdAtual}_${campo}`).src = base64;
-
-        closeCrop();
-      }
-    }
-
-    function closeCrop() {
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
-      modal.style.display = 'none';
-    }
-
-    carregarJogadores();
+    atualizar();
   </script>
 </body>
 </html>
