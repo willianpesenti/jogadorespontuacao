@@ -20,7 +20,21 @@
     <input type="text" id="url_feliz" placeholder="URL imagem feliz" />
     <button onclick="adicionarJogador()">Adicionar</button>
   </div>
-  <div id="jogadores"></div>
+
+  <div style="margin: 20px 0;">
+    <button onclick="removerTodos()">🗑️ Remover TODOS os jogadores</button>
+  </div>
+
+  <div style="display: flex; justify-content: space-between;">
+    <div style="flex: 1; padding-right: 20px; border-right: 1px solid #444;">
+      <h2>Time A</h2>
+      <div id="timeA"></div>
+    </div>
+    <div style="flex: 1; padding-left: 20px;">
+      <h2>Time B</h2>
+      <div id="timeB"></div>
+    </div>
+  </div>
 
   <script>
     firebase.initializeApp(firebaseConfig);
@@ -42,28 +56,40 @@
       });
     }
 
+    function atualizarPontuacao(nome, valor) {
+      db.ref("jogadores/" + nome + "/pontuacao").set(Number(valor));
+    }
+
+    function removerJogador(nome) {
+      db.ref("jogadores/" + nome).remove();
+    }
+
+    function removerTodos() {
+      if (confirm("Tem certeza que deseja remover todos os jogadores?")) {
+        db.ref("jogadores").remove();
+      }
+    }
+
     db.ref("jogadores").on("value", snapshot => {
-      const container = document.getElementById("jogadores");
-      container.innerHTML = "";
+      document.getElementById("timeA").innerHTML = "";
+      document.getElementById("timeB").innerHTML = "";
       const jogadores = snapshot.val();
       for (const nome in jogadores) {
         const j = jogadores[nome];
-        container.innerHTML += `
-          <div>
-            <h3>${j.nome} (${j.time})</h3>
-            <img src="${j.url_triste}" width="100"/>
-            <img src="${j.url_neutro}" width="100"/>
-            <img src="${j.url_feliz}" width="100"/>
-            <input type="number" value="${j.pontuacao}" onchange="atualizarPontuacao('${j.nome}', this.value)" />
-            <a href="visualizacao.html?jogador=${j.nome}" target="_blank">Link OBS</a>
+        let target = j.time === 'A' ? document.getElementById("timeA") : document.getElementById("timeB");
+        target.innerHTML += `
+          <div style="margin: 10px 0; border: 1px solid #ccc; padding: 10px;">
+            <strong>${j.nome} (${j.time})</strong><br>
+            <img src="${j.url_triste}" width="70">
+            <img src="${j.url_neutro}" width="70">
+            <img src="${j.url_feliz}" width="70"><br>
+            Pontuação: <input type="number" value="${j.pontuacao}" onchange="atualizarPontuacao('${j.nome}', this.value)">
+            <button onclick="removerJogador('${j.nome}')">❌ Remover</button><br>
+            <a href="visualizacao.html?jogador=${j.nome}" target="_blank">🔗 Link OBS</a>
           </div>
         `;
       }
     });
-
-    function atualizarPontuacao(nome, valor) {
-      db.ref("jogadores/" + nome + "/pontuacao").set(Number(valor));
-    }
   </script>
 </body>
 </html>
