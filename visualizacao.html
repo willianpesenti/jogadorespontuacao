@@ -17,7 +17,7 @@
     }
 
     #container {
-      width: 360px;
+      width: 360px; /* proporção 9:16 menor */
       height: 640px;
       position: relative;
     }
@@ -30,21 +30,22 @@
 
     #pontuacao {
       position: absolute;
-      top: 20px;
+      top: 30px;
       left: 0;
       width: 100%;
       text-align: center;
+      font-size: 90px;
       color: white;
-      font-size: 80px;
       font-family: 'Arial Black', sans-serif;
-      text-shadow: 3px 3px 8px black;
+      text-shadow: 4px 4px 8px black;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
   <div id="container">
     <div id="pontuacao">0</div>
-    <img id="imagemJogador" src="" alt="Imagem do Jogador">
+    <img id="imagemJogador" src="" alt="Imagem do Jogador" />
   </div>
 
   <script>
@@ -55,19 +56,21 @@
     const db = firebase.database();
 
     const img = document.getElementById("imagemJogador");
-    const pontuacao = document.getElementById("pontuacao");
+    const pontuacaoDiv = document.getElementById("pontuacao");
 
-    db.ref("jogadores/" + nome).on("value", snapshot => {
-      const j = snapshot.val();
-      if (j) {
-        let imagemUrl = j.url_neutro;
-        if (j.pontuacao > 7) {
-          imagemUrl = j.url_feliz;
-        } else if (j.pontuacao < 4) {
-          imagemUrl = j.url_triste;
+    db.ref("jogadores/" + nome).on("value", (snapshot) => {
+      const jogador = snapshot.val();
+      if (jogador) {
+        let imagem = jogador.url_neutro;
+
+        if (jogador.pontuacao >= 7) {
+          imagem = jogador.url_feliz;
+        } else if (jogador.pontuacao <= 3) {
+          imagem = jogador.url_triste;
         }
-        img.src = imagemUrl;
-        pontuacao.textContent = j.pontuacao;
+
+        img.src = imagem;
+        pontuacaoDiv.textContent = jogador.pontuacao;
       }
     });
   </script>
