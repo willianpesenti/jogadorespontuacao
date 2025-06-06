@@ -1,103 +1,134 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Painel de Jogadores</title>
-  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet" />
+  <title>Painel de Pontuação</title>
+
+  <!-- Firebase -->
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Fonte Averta (via CDN alternativa) -->
+  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
+
   <style>
     body {
-      font-family: 'Averta', sans-serif;
+      background-image: url('https://willianpesenti.github.io/jogadorespontuacao/BG_Branco_Diguinho.png');
+      background-size: auto;
+      background-repeat: repeat;
+      background-position: top left;
+      background-attachment: fixed;
+      min-height: 100vh;
       margin: 0;
-      padding: 20px;
-      background-color: #f2f2f2;
+      font-family: 'Averta', sans-serif;
     }
-    h1 {
-      text-align: center;
+
+    h1, h2, strong {
+      color: #000;
     }
-    .container {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 20px;
+
+    input, select, button {
+      margin: 5px;
     }
-    .time {
-      width: 48%;
-      background: white;
+
+    .painel {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 10px;
       border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .jogador {
+
+    #form {
       margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 10px;
-    }
-    img {
-      height: 80px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    .label {
-      font-weight: bold;
-    }
-    .obs-link {
-      display: block;
-      margin-top: 5px;
-      font-size: 0.9em;
-      color: #555;
     }
   </style>
 </head>
 <body>
-  <h1>Painel de Visualização</h1>
-  <div class="container">
-    <div class="time" id="timeA">
+  <h1 class="painel">Painel de Pontuação</h1>
+
+  <div id="form" class="painel">
+    <input type="text" id="nome" placeholder="Nome do jogador" />
+    <select id="time">
+      <option value="A">Time A</option>
+      <option value="B">Time B</option>
+    </select>
+    <input type="text" id="url_triste" placeholder="URL imagem triste" />
+    <input type="text" id="url_neutro" placeholder="URL imagem neutra" />
+    <input type="text" id="url_feliz" placeholder="URL imagem feliz" />
+    <button onclick="adicionarJogador()">Adicionar</button>
+  </div>
+
+  <div style="margin: 20px 0;" class="painel">
+    <button onclick="removerTodos()">🗑️ Remover TODOS os jogadores</button>
+  </div>
+
+  <div style="display: flex; justify-content: space-between;">
+    <div class="painel" style="flex: 1; margin-right: 10px;">
       <h2>Time A</h2>
+      <div id="timeA"></div>
     </div>
-    <div class="time" id="timeB">
+    <div class="painel" style="flex: 1; margin-left: 10px;">
       <h2>Time B</h2>
+      <div id="timeB"></div>
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
   <script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function atualizar() {
-      db.ref("jogadores").on("value", snapshot => {
-        const timeA = document.getElementById("timeA");
-        const timeB = document.getElementById("timeB");
+    function adicionarJogador() {
+      const nome = document.getElementById("nome").value;
+      const time = document.getElementById("time").value;
+      const triste = document.getElementById("url_triste").value;
+      const neutro = document.getElementById("url_neutro").value;
+      const feliz = document.getElementById("url_feliz").value;
 
-        // limpar
-        timeA.innerHTML = "<h2>Time A</h2>";
-        timeB.innerHTML = "<h2>Time B</h2>";
-
-        const jogadores = snapshot.val();
-        if (!jogadores) return;
-
-        Object.entries(jogadores).forEach(([id, j]) => {
-          const div = document.createElement("div");
-          div.className = "jogador";
-          div.innerHTML = `
-            <div class="label">${j.nome} - Pontos: ${j.pontuacao || 0}</div>
-            <img src="${j.url_triste || ''}" />
-            <img src="${j.url_neutro || ''}" />
-            <img src="${j.url_feliz || ''}" />
-            <a class="obs-link" href="visualizacao.html?id=${id}" target="_blank">Abrir no OBS</a>
-          `;
-
-          if (j.time === "A") {
-            timeA.appendChild(div);
-          } else {
-            timeB.appendChild(div);
-          }
-        });
+      db.ref("jogadores/" + nome).set({
+        nome,
+        time,
+        pontuacao: 0,
+        url_triste: triste,
+        url_neutro: neutro,
+        url_feliz: feliz
       });
     }
 
-    atualizar();
+    function atualizarPontuacao(nome, valor) {
+      db.ref("jogadores/" + nome + "/pontuacao").set(Number(valor));
+    }
+
+    function removerJogador(nome) {
+      db.ref("jogadores/" + nome).remove();
+    }
+
+    function removerTodos() {
+      if (confirm("Tem certeza que deseja remover todos os jogadores?")) {
+        db.ref("jogadores").remove();
+      }
+    }
+
+    db.ref("jogadores").on("value", snapshot => {
+      document.getElementById("timeA").innerHTML = "";
+      document.getElementById("timeB").innerHTML = "";
+      const jogadores = snapshot.val();
+      for (const nome in jogadores) {
+        const j = jogadores[nome];
+        let target = j.time === 'A' ? document.getElementById("timeA") : document.getElementById("timeB");
+
+        target.innerHTML += `
+          <div style="margin: 10px 0; border: 1px solid #ccc; padding: 10px;">
+            <strong>${j.nome} (${j.time})</strong><br>
+            <img src="${j.url_triste}" width="70">
+            <img src="${j.url_neutro}" width="70">
+            <img src="${j.url_feliz}" width="70"><br>
+            Pontuação: <input type="number" value="${j.pontuacao}" onchange="atualizarPontuacao('${j.nome}', this.value)">
+            <button onclick="removerJogador('${j.nome}')">❌ Remover</button><br>
+            <a href="visualizacao.html?jogador=${j.nome}" target="_blank">🔗 Link OBS</a>
+          </div>
+        `;
+      }
+    });
   </script>
 </body>
 </html>
