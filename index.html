@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-  <!-- Fonte Averta (via CDN alternativa) -->
+  <!-- Fonte Averta -->
   <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
 
   <style>
@@ -60,6 +60,9 @@
 
   <div style="margin: 20px 0;" class="painel">
     <button onclick="removerTodos()">🗑️ Remover TODOS os jogadores</button>
+    <button onclick="exportarDados()">📤 Exportar Dados</button>
+    <input type="file" id="importarInput" style="display: none" onchange="importarDados(event)">
+    <button onclick="document.getElementById('importarInput').click()">📥 Importar Dados</button>
   </div>
 
   <div style="display: flex; justify-content: space-between;">
@@ -84,6 +87,11 @@
       const neutro = document.getElementById("url_neutro").value;
       const feliz = document.getElementById("url_feliz").value;
 
+      if (!nome || !triste || !neutro || !feliz) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+
       db.ref("jogadores/" + nome).set({
         nome,
         time,
@@ -106,6 +114,33 @@
       if (confirm("Tem certeza que deseja remover todos os jogadores?")) {
         db.ref("jogadores").remove();
       }
+    }
+
+    function exportarDados() {
+      db.ref("jogadores").once("value", snapshot => {
+        const dados = snapshot.val();
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "jogadores_backup.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function importarDados(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dados = JSON.parse(e.target.result);
+        if (confirm("Deseja importar os dados e sobrescrever os atuais?")) {
+          db.ref("jogadores").set(dados);
+        }
+      };
+      reader.readAsText(file);
     }
 
     db.ref("jogadores").on("value", snapshot => {
