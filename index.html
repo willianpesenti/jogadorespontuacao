@@ -3,37 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <title>Painel de Pontuação</title>
+
+  <!-- Firebase -->
   <script src="firebase-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Fonte Averta (via CDN alternativa) -->
+  <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
+
   <style>
     body {
       background-image: url('https://willianpesenti.github.io/jogadorespontuacao/BG_Branco_Diguinho.png');
-
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      font-family: sans-serif;
+      background-size: auto;
+      background-repeat: repeat;
+      background-position: top left;
+      background-attachment: fixed;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Averta', sans-serif;
     }
-    h1, h2, label, strong {
+
+    h1, h2, strong {
       color: #000;
     }
+
     input, select, button {
       margin: 5px;
     }
-    #form {
-      margin-bottom: 20px;
-    }
-    div {
+
+    .painel {
       background-color: rgba(255, 255, 255, 0.85);
       padding: 10px;
       border-radius: 10px;
     }
+
+    #form {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>Painel de Pontuação</h1>
-  <div id="form">
+  <h1 class="painel">Painel de Pontuação</h1>
+
+  <div id="form" class="painel">
     <input type="text" id="nome" placeholder="Nome do jogador" />
     <select id="time">
       <option value="A">Time A</option>
@@ -45,16 +58,16 @@
     <button onclick="adicionarJogador()">Adicionar</button>
   </div>
 
-  <div style="margin: 20px 0;">
+  <div style="margin: 20px 0;" class="painel">
     <button onclick="removerTodos()">🗑️ Remover TODOS os jogadores</button>
   </div>
 
   <div style="display: flex; justify-content: space-between;">
-    <div style="flex: 1; padding-right: 20px; border-right: 1px solid #444;">
+    <div class="painel" style="flex: 1; margin-right: 10px;">
       <h2>Time A</h2>
       <div id="timeA"></div>
     </div>
-    <div style="flex: 1; padding-left: 20px;">
+    <div class="painel" style="flex: 1; margin-left: 10px;">
       <h2>Time B</h2>
       <div id="timeB"></div>
     </div>
@@ -70,6 +83,7 @@
       const triste = document.getElementById("url_triste").value;
       const neutro = document.getElementById("url_neutro").value;
       const feliz = document.getElementById("url_feliz").value;
+
       db.ref("jogadores/" + nome).set({
         nome,
         time,
@@ -101,6 +115,7 @@
       for (const nome in jogadores) {
         const j = jogadores[nome];
         let target = j.time === 'A' ? document.getElementById("timeA") : document.getElementById("timeB");
+
         target.innerHTML += `
           <div style="margin: 10px 0; border: 1px solid #ccc; padding: 10px;">
             <strong>${j.nome} (${j.time})</strong><br>
