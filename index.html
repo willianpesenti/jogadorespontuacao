@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Painel de Jogadores com Crop</title>
 
-  <!-- Fonte + Cropper -->
+  <!-- Fonte Averta + CropperJS -->
   <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
   <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet" />
 
@@ -15,22 +15,30 @@
       margin: 0;
       padding: 20px;
     }
-    h1 { text-align: center; }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
     .jogador {
       background: white;
       border: 1px solid #ccc;
       padding: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       border-radius: 8px;
     }
+
     img.thumb {
       width: 100px;
       height: auto;
       margin-right: 10px;
     }
+
     button {
       margin: 4px;
     }
+
     #cropperModal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -40,9 +48,11 @@
       align-items: center;
       z-index: 9999;
     }
+
     #cropperModal img {
       max-height: 80vh;
     }
+
     #cropperContainer {
       background: white;
       padding: 20px;
@@ -54,7 +64,7 @@
   <h1>Painel de Jogadores</h1>
   <div id="painelJogadores"></div>
 
-  <!-- Modal Crop -->
+  <!-- Modal de Crop -->
   <div id="cropperModal">
     <div id="cropperContainer">
       <img id="cropImage" src="" />
@@ -83,8 +93,6 @@
     let tipoImagemAtual = "";
     let jogadorIdAtual = "";
 
-    const imagemPadrao = "https://via.placeholder.com/100x160.png?text=Vazio";
-
     function carregarJogadores() {
       db.ref("jogadores").on("value", snapshot => {
         painel.innerHTML = '';
@@ -100,14 +108,14 @@
             <h3>${j.nome} (${j.time})</h3>
             <p>Pontuação: ${j.pontuacao || 0}</p>
 
-            <img src="${j.url_triste || imagemPadrao}" id="img_${id}_triste" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_triste', '${j.url_triste || imagemPadrao}')">Editar Triste</button><br>
+            ${j.url_triste ? `<img src="${j.url_triste}" id="img_${id}_triste" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_triste', '${j.url_triste}')">Editar Triste</button><br>` : ''}
 
-            <img src="${j.url_neutro || imagemPadrao}" id="img_${id}_neutro" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_neutro', '${j.url_neutro || imagemPadrao}')">Editar Neutro</button><br>
+            ${j.url_neutro ? `<img src="${j.url_neutro}" id="img_${id}_neutro" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_neutro', '${j.url_neutro}')">Editar Neutro</button><br>` : ''}
 
-            <img src="${j.url_feliz || imagemPadrao}" id="img_${id}_feliz" class="thumb">
-            <button onclick="editarImagem('${id}', 'url_feliz', '${j.url_feliz || imagemPadrao}')">Editar Feliz</button>
+            ${j.url_feliz ? `<img src="${j.url_feliz}" id="img_${id}_feliz" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_feliz', '${j.url_feliz}')">Editar Feliz</button>` : ''}
           `;
           painel.appendChild(div);
         }
