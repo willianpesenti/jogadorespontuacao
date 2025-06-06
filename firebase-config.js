@@ -1,4 +1,3 @@
-
 const firebaseConfig = {
   apiKey: "AIzaSyBGAt4hPAai7y-Q4BCXrynQMV3uzYzpFuQ",
   authDomain: "pontuacao-jogadores.firebaseapp.com",
