@@ -26,7 +26,7 @@
     }
 
     #container {
-      width: 360px;  /* 9:16 proporção */
+      width: 360px;  /* proporção 9:16 */
       height: 640px;
       overflow: hidden;
     }
@@ -58,16 +58,19 @@
     db.ref("jogadores/" + nome).on("value", (snapshot) => {
       const jogador = snapshot.val();
       if (jogador) {
+        const pontuacao = Number(jogador.pontuacao);
         let imagem = jogador.url_neutro;
 
-        if (jogador.pontuacao >= 7) {
-          imagem = jogador.url_feliz;
-        } else if (jogador.pontuacao <= 3) {
+        if (pontuacao >= 0 && pontuacao <= 50) {
           imagem = jogador.url_triste;
+        } else if (pontuacao >= 51 && pontuacao <= 70) {
+          imagem = jogador.url_neutro;
+        } else if (pontuacao >= 71) {
+          imagem = jogador.url_feliz;
         }
 
         img.src = imagem;
-        pontuacaoDiv.textContent = jogador.pontuacao;
+        pontuacaoDiv.textContent = pontuacao;
       }
     });
   </script>
