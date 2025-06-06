@@ -11,40 +11,37 @@
       background-color: black;
       margin: 0;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
+      font-family: 'Arial Black', sans-serif;
+    }
+
+    #pontuacao {
+      font-size: 90px;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 4px 4px 8px black;
     }
 
     #container {
-      width: 360px; /* proporção 9:16 menor */
+      width: 360px;  /* 9:16 proporção */
       height: 640px;
-      position: relative;
+      overflow: hidden;
     }
 
     #imagemJogador {
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-
-    #pontuacao {
-      position: absolute;
-      top: 30px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 90px;
-      color: white;
-      font-family: 'Arial Black', sans-serif;
-      text-shadow: 4px 4px 8px black;
-      z-index: 2;
+      display: block;
     }
   </style>
 </head>
 <body>
+  <div id="pontuacao">0</div>
   <div id="container">
-    <div id="pontuacao">0</div>
     <img id="imagemJogador" src="" alt="Imagem do Jogador" />
   </div>
 
