@@ -1,134 +1,160 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Painel de Pontuação</title>
+  <title>Painel de Jogadores com Crop</title>
 
-  <!-- Firebase -->
-  <script src="firebase-config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  <!-- Fonte Averta (via CDN alternativa) -->
+  <!-- Fonte Averta + CropperJS -->
   <link href="https://fonts.cdnfonts.com/css/averta" rel="stylesheet">
+  <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet" />
 
   <style>
     body {
-      background-image: url('https://willianpesenti.github.io/jogadorespontuacao/BG_Branco_Diguinho.png');
-      background-size: auto;
-      background-repeat: repeat;
-      background-position: top left;
-      background-attachment: fixed;
-      min-height: 100vh;
-      margin: 0;
       font-family: 'Averta', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
     }
 
-    h1, h2, strong {
-      color: #000;
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
     }
 
-    input, select, button {
+    .jogador {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+    }
+
+    img.thumb {
+      width: 100px;
+      height: auto;
+      margin-right: 10px;
+    }
+
+    button {
       margin: 5px;
     }
 
-    .painel {
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 10px;
-      border-radius: 10px;
+    #cropperModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
     }
 
-    #form {
-      margin-bottom: 20px;
+    #cropperModal img {
+      max-height: 80vh;
+    }
+
+    #cropperContainer {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-  <h1 class="painel">Painel de Pontuação</h1>
+  <h1>Painel de Jogadores</h1>
+  <div id="painelJogadores"></div>
 
-  <div id="form" class="painel">
-    <input type="text" id="nome" placeholder="Nome do jogador" />
-    <select id="time">
-      <option value="A">Time A</option>
-      <option value="B">Time B</option>
-    </select>
-    <input type="text" id="url_triste" placeholder="URL imagem triste" />
-    <input type="text" id="url_neutro" placeholder="URL imagem neutra" />
-    <input type="text" id="url_feliz" placeholder="URL imagem feliz" />
-    <button onclick="adicionarJogador()">Adicionar</button>
-  </div>
-
-  <div style="margin: 20px 0;" class="painel">
-    <button onclick="removerTodos()">🗑️ Remover TODOS os jogadores</button>
-  </div>
-
-  <div style="display: flex; justify-content: space-between;">
-    <div class="painel" style="flex: 1; margin-right: 10px;">
-      <h2>Time A</h2>
-      <div id="timeA"></div>
-    </div>
-    <div class="painel" style="flex: 1; margin-left: 10px;">
-      <h2>Time B</h2>
-      <div id="timeB"></div>
+  <!-- Modal de Crop -->
+  <div id="cropperModal">
+    <div id="cropperContainer">
+      <img id="cropImage" src="" />
+      <div style="text-align:center; margin-top:10px;">
+        <button onclick="saveCrop()">Salvar</button>
+        <button onclick="closeCrop()">Cancelar</button>
+      </div>
     </div>
   </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://unpkg.com/cropperjs"></script>
+  <script src="firebase-config.js"></script>
 
   <script>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function adicionarJogador() {
-      const nome = document.getElementById("nome").value;
-      const time = document.getElementById("time").value;
-      const triste = document.getElementById("url_triste").value;
-      const neutro = document.getElementById("url_neutro").value;
-      const feliz = document.getElementById("url_feliz").value;
+    const painel = document.getElementById('painelJogadores');
+    const modal = document.getElementById('cropperModal');
+    const imageToCrop = document.getElementById('cropImage');
+    let cropper = null;
+    let jogadorRefAtual = null;
+    let tipoImagemAtual = "";
 
-      db.ref("jogadores/" + nome).set({
-        nome,
-        time,
-        pontuacao: 0,
-        url_triste: triste,
-        url_neutro: neutro,
-        url_feliz: feliz
+    function carregarJogadores() {
+      db.ref("jogadores").on("value", snapshot => {
+        painel.innerHTML = '';
+        const jogadores = snapshot.val();
+        for (const id in jogadores) {
+          const j = jogadores[id];
+          const div = document.createElement('div');
+          div.className = 'jogador';
+          div.innerHTML = `
+            <h3>${j.nome} (${j.time})</h3>
+            <p>Pontuação: ${j.pontuacao}</p>
+
+            <img src="${j.url_triste || ''}" id="img_${id}_triste" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_triste', '${j.url_triste || ''}')">Editar Triste</button><br>
+
+            <img src="${j.url_neutro || ''}" id="img_${id}_neutro" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_neutro', '${j.url_neutro || ''}')">Editar Neutro</button><br>
+
+            <img src="${j.url_feliz || ''}" id="img_${id}_feliz" class="thumb">
+            <button onclick="editarImagem('${id}', 'url_feliz', '${j.url_feliz || ''}')">Editar Feliz</button>
+          `;
+          painel.appendChild(div);
+        }
       });
     }
 
-    function atualizarPontuacao(nome, valor) {
-      db.ref("jogadores/" + nome + "/pontuacao").set(Number(valor));
+    function editarImagem(id, campo, url) {
+      imageToCrop.src = url;
+      modal.style.display = 'flex';
+      tipoImagemAtual = campo;
+      jogadorRefAtual = db.ref("jogadores/" + id);
+
+      imageToCrop.onload = () => {
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(imageToCrop, {
+          aspectRatio: 1080 / 1920,
+          viewMode: 1
+        });
+      };
     }
 
-    function removerJogador(nome) {
-      db.ref("jogadores/" + nome).remove();
-    }
+    function saveCrop() {
+      if (cropper) {
+        const canvas = cropper.getCroppedCanvas({ width: 1080, height: 1920 });
+        const base64 = canvas.toDataURL("image/jpeg");
 
-    function removerTodos() {
-      if (confirm("Tem certeza que deseja remover todos os jogadores?")) {
-        db.ref("jogadores").remove();
+        jogadorRefAtual.update({ [tipoImagemAtual]: base64 });
+        const id = jogadorRefAtual.key;
+        const imgId = `img_${id}_${tipoImagemAtual.replace("url_", "")}`;
+        document.getElementById(imgId).src = base64;
+        closeCrop();
       }
     }
 
-    db.ref("jogadores").on("value", snapshot => {
-      document.getElementById("timeA").innerHTML = "";
-      document.getElementById("timeB").innerHTML = "";
-      const jogadores = snapshot.val();
-      for (const nome in jogadores) {
-        const j = jogadores[nome];
-        let target = j.time === 'A' ? document.getElementById("timeA") : document.getElementById("timeB");
-
-        target.innerHTML += `
-          <div style="margin: 10px 0; border: 1px solid #ccc; padding: 10px;">
-            <strong>${j.nome} (${j.time})</strong><br>
-            <img src="${j.url_triste}" width="70">
-            <img src="${j.url_neutro}" width="70">
-            <img src="${j.url_feliz}" width="70"><br>
-            Pontuação: <input type="number" value="${j.pontuacao}" onchange="atualizarPontuacao('${j.nome}', this.value)">
-            <button onclick="removerJogador('${j.nome}')">❌ Remover</button><br>
-            <a href="visualizacao.html?jogador=${j.nome}" target="_blank">🔗 Link OBS</a>
-          </div>
-        `;
+    function closeCrop() {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
       }
-    });
+      modal.style.display = 'none';
+    }
+
+    carregarJogadores();
   </script>
 </body>
 </html>
