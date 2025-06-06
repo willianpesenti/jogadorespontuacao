@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Pontuação</title>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>Painel de Pontuação</h1>
+  <div id="form">
+    <input type="text" id="nome" placeholder="Nome do jogador" />
+    <select id="time">
+      <option value="A">Time A</option>
+      <option value="B">Time B</option>
+    </select>
+    <input type="text" id="url_triste" placeholder="URL imagem triste" />
+    <input type="text" id="url_neutro" placeholder="URL imagem neutra" />
+    <input type="text" id="url_feliz" placeholder="URL imagem feliz" />
+    <button onclick="adicionarJogador()">Adicionar</button>
+  </div>
+  <div id="jogadores"></div>
+
+  <script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function adicionarJogador() {
+      const nome = document.getElementById("nome").value;
+      const time = document.getElementById("time").value;
+      const triste = document.getElementById("url_triste").value;
+      const neutro = document.getElementById("url_neutro").value;
+      const feliz = document.getElementById("url_feliz").value;
+      db.ref("jogadores/" + nome).set({
+        nome,
+        time,
+        pontuacao: 0,
+        url_triste: triste,
+        url_neutro: neutro,
+        url_feliz: feliz
+      });
+    }
+
+    db.ref("jogadores").on("value", snapshot => {
+      const container = document.getElementById("jogadores");
+      container.innerHTML = "";
+      const jogadores = snapshot.val();
+      for (const nome in jogadores) {
+        const j = jogadores[nome];
+        container.innerHTML += `
+          <div>
+            <h3>${j.nome} (${j.time})</h3>
+            <img src="${j.url_triste}" width="100"/>
+            <img src="${j.url_neutro}" width="100"/>
+            <img src="${j.url_feliz}" width="100"/>
+            <input type="number" value="${j.pontuacao}" onchange="atualizarPontuacao('${j.nome}', this.value)" />
+            <a href="visualizacao.html?jogador=${j.nome}" target="_blank">Link OBS</a>
+          </div>
+        `;
+      }
+    });
+
+    function atualizarPontuacao(nome, valor) {
+      db.ref("jogadores/" + nome + "/pontuacao").set(Number(valor));
+    }
+  </script>
+</body>
+</html>

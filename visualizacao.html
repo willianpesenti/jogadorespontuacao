@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualização OBS</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+    }
+    #pontuacao {
+      font-size: 120px;
+      margin-bottom: 20px;
+    }
+    img {
+      max-height: 80vh;
+    }
+  </style>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div id="pontuacao">--</div>
+  <img id="foto" src="" alt="Foto do jogador">
+  <script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const urlParams = new URLSearchParams(window.location.search);
+    const nome = urlParams.get("jogador");
+    const pontuacaoEl = document.getElementById("pontuacao");
+    const fotoEl = document.getElementById("foto");
+
+    db.ref("jogadores/" + nome).on("value", snapshot => {
+      const j = snapshot.val();
+      if (!j) return;
+      pontuacaoEl.innerText = j.pontuacao;
+      let estado = "url_neutro";
+      if (j.pontuacao <= 50) estado = "url_triste";
+      else if (j.pontuacao > 70) estado = "url_feliz";
+      fotoEl.src = j[estado];
+    });
+  </script>
+</body>
+</html>
